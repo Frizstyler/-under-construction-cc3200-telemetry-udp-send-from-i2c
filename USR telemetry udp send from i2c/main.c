@@ -117,60 +117,6 @@ extern uVectorEntry __vector_table;
 //                 GLOBAL VARIABLES -- End
 //*****************************************************************************
 
-//*****************************************************************************
-//
-//! Display a prompt for the user to enter command
-//!
-//! \param  none
-//!
-//! \return none
-//!
-//*****************************************************************************
-void
-DisplayPrompt()
-{
-    UART_PRINT("\n\rcmd#");
-}
-
-//*****************************************************************************
-//
-//! Display the usage of the I2C commands supported
-//!
-//! \param  none
-//!
-//! \return none
-//!
-//*****************************************************************************
-void
-DisplayUsage()
-{
-    UART_PRINT("Command Usage \n\r");
-    UART_PRINT("------------- \n\r");
-    UART_PRINT("write <dev_addr> <wrlen> <<byte0> [<byte1> ... ]> <stop>\n\r");
-    UART_PRINT("\t - Write data to the specified i2c device\n\r");
-    UART_PRINT("read  <dev_addr> <rdlen> \n\r\t - Read data frpm the specified "
-                "i2c device\n\r");
-    UART_PRINT("writereg <dev_addr> <reg_offset> <wrlen> <<byte0> [<byte1> ... "
-                "]> \n\r");
-    UART_PRINT("\t - Write data to the specified register of the i2c device\n\r");
-    UART_PRINT("readreg <dev_addr> <reg_offset> <rdlen> \n\r");
-    UART_PRINT("\t - Read data from the specified register of the i2c device\n\r");
-    UART_PRINT("\n\r");
-    UART_PRINT("Parameters \n\r");
-    UART_PRINT("---------- \n\r");
-    UART_PRINT("dev_addr - slave address of the i2c device, a hex value "
-                "preceeded by '0x'\n\r");
-    UART_PRINT("reg_offset - register address in the i2c device, a hex value "
-                "preceeded by '0x'\n\r");
-    UART_PRINT("wrlen - number of bytes to be written, a decimal value \n\r");
-    UART_PRINT("rdlen - number of bytes to be read, a decimal value \n\r");
-    UART_PRINT("bytex - value of the data to be written, a hex value preceeded "
-                "by '0x'\n\r");
-    UART_PRINT("stop - number of stop bits, 0 or 1\n\r");
-    UART_PRINT("--------------------------------------------------------------"
-                "--------------- \n\r\n\r");
-
-}
 
 //*****************************************************************************
 //
@@ -638,7 +584,7 @@ void UDPTRANSMIT(unsigned short usPort)
     unsigned long   lLoopCount = 0;
 
     sTestBufLen  = BUF_SIZE;
-    DestIp = g_ulGatewayIP & 0xffffff00;        //broadcast .255
+    DestIp = g_ulGatewayIP & 0xffffff00;        //.2. final program target is broadcast .255
     DestIp|=0x2;
     //filling the UDP server socket address
     sAddr.sin_family = SL_AF_INET;
@@ -661,7 +607,11 @@ void UDPTRANSMIT(unsigned short usPort)
         // error
         ASSERT_ON_ERROR(SOCKET_CREATE_ERROR);
     }
-    ucLen=8;
+
+
+    ucLen=2;
+
+
     // for a UDP connection connect is not required
     while (1)
     {
@@ -684,12 +634,12 @@ void UDPTRANSMIT(unsigned short usPort)
             UART_PRINT("I2C Read failed\n\r");
             return FAILURE;
         }
+        temp=0;
         int i;
-        for(i=0;g_cBsdBuf[i]!=NULL;i++){
-            temp=temp+(g_cBsdBuf[i]<<(8*(strlen(g_cBsdBuf)-i-1)));
+        for(i=0;g_cBsdBuf[i]!=NULL;i++){            //WRONG. SHOULD BE I<=BUFSIZE
+            temp=temp+(g_cBsdBuf[i]<<(8*(strlen(g_cBsdBuf)-i-1)));      //turns str to int
         }
         //sTestBufLen=strlen(g_cBsdBuf)
-
 
 		// sending packet
         iStatus = sl_SendTo(iSockID, g_cBsdBuf, sTestBufLen, 0,
@@ -700,8 +650,8 @@ void UDPTRANSMIT(unsigned short usPort)
             sl_Close(iSockID);
             ASSERT_ON_ERROR(SEND_ERROR);
         }
-        MAP_UtilsDelay(20000000);
-        memset(g_cBsdBuf,0,sizeof(g_cBsdBuf));  //clear buffer
+        MAP_UtilsDelay(20000000);               //delay. decrease throughput of app
+        memset(g_cBsdBuf,0,sizeof(g_cBsdBuf));  //clear whole buffer.           SHOULD BE /SIZEOF(GBSDBUF[1])?
         lLoopCount++;
 
     }
